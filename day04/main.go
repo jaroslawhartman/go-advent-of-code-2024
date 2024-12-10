@@ -10,7 +10,16 @@ import (
 var input []string
 var found [][]string
 
+const pattern = "XMAS"
+
 func getChar(x int, y int) string {
+
+	maxY := len(input[0])
+	maxX := len(input)
+
+	if x > maxX || y > maxY {
+		return "@"
+	}
 
 	x, y = normalizeXY(x, y)
 
@@ -66,7 +75,6 @@ func readInput(file string) {
 }
 
 func findXMAS(x int, y int, moveX int, moveY int) bool {
-	pattern := "XMAS"
 
 	for i := range pattern {
 		if getChar(x+moveX*i, y+moveY*i) != string(pattern[i]) {
