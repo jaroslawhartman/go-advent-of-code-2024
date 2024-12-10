@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/fatih/color"
 )
 
 var input []string
@@ -17,7 +19,7 @@ func getChar(x int, y int) string {
 	maxY := len(input[0])
 	maxX := len(input)
 
-	if x > maxX || y > maxY {
+	if x >= maxX || y >= maxY || x < 0 || y < 0 {
 		return "@"
 	}
 
@@ -100,18 +102,38 @@ func initFound() {
 	}
 }
 
-func printSummary() {
+func printSummary(m int, n int) {
+
+	// red := color.New(color.FgRed, color.Bold)
+
 	fmt.Println("---------- SUMMARY ----------")
 
 	for y := 0; y < len(found); y++ {
 		for x := 0; x < len(found[0]); x++ {
-			fmt.Printf("%s", string(found[x][y]))
+			if x == m && y == n {
+				color.Set(color.FgRed, color.Bold)
+				fmt.Printf("%s", string(found[x][y]))
+				color.Unset()
+			} else {
+				fmt.Printf("%s", string(found[x][y]))
+			}
 		}
 		fmt.Println()
 	}
 }
 
 func run(file string) int {
+
+	directions := [][]int{{1, 0},
+		{-1, 0},
+		{0, 1},
+		{0, -1},
+		{1, 1},
+		{1, -1},
+		{-1, 1},
+		{-1, -1},
+	}
+
 	readInput(file)
 	initFound()
 
@@ -127,21 +149,12 @@ func run(file string) int {
 	for y := 0; y < len(input); y++ {
 		for x := 0; x < len(input[0]); x++ {
 
-			if findXMAS(x, y, 1, 0) ||
-				findXMAS(x, y, -1, 0) ||
-				findXMAS(x, y, 0, 1) ||
-				findXMAS(x, y, 0, -1) ||
-				findXMAS(x, y, 1, 1) ||
-				findXMAS(x, y, 1, -1) ||
-				findXMAS(x, y, -1, 1) ||
-				findXMAS(x, y, -1, -1) {
-				// fmt.Printf("%s ", getChar(x, y))
-				printSummary()
-				total += 1
-			} else {
-				fmt.Println("====")
-				// fmt.Printf(". ")
+			for _, v := range directions {
+				if findXMAS(x, y, v[0], v[1]) {
+					total += 1
+				}
 			}
+			// printSummary(x, y)
 		}
 		fmt.Println()
 	}
