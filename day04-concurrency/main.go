@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
+	"github.com/sourcegraph/conc/pool"
 )
 
 var input []string
@@ -124,6 +125,8 @@ func printSummary(m int, n int) {
 
 func run(file string) int {
 
+	p := pool.NewWithResults[bool]()
+
 	directions := [][]int{{1, 0},
 		{-1, 0},
 		{0, 1},
@@ -150,13 +153,23 @@ func run(file string) int {
 		for x := 0; x < len(input[0]); x++ {
 
 			for _, v := range directions {
-				if findXMAS(x, y, v[0], v[1]) {
-					total += 1
-				}
+				p.Go(func() bool {
+					return findXMAS(x, y, v[0], v[1])
+				})
 			}
 			// printSummary(x, y)
 		}
 		fmt.Println()
+	}
+
+	res := p.Wait()
+
+	fmt.Println(res)
+
+	for _, v := range res {
+		if v {
+			total++
+		}
 	}
 
 	return total

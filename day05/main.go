@@ -5,56 +5,98 @@ import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/fatih/color"
+	"slices"
+	"strconv"
+	"strings"
 )
 
-var input []string
-var found [][]string
+var ordering [][]int
+var updates [][]int
 
-const pattern = "MAS"
-
-func getChar(x int, y int) string {
-
-	maxY := len(input[0])
-	maxX := len(input)
-
-	if x >= maxX || y >= maxY || x < 0 || y < 0 {
-		return "@"
-	}
-
-	x, y = normalizeXY(x, y)
-
-	return string(input[y][x])
+func getMiddlePage(u []int) int {
+	return u[(len(u))/2]
 }
 
-func normalizeX(v int) int {
-	max := len(input[0])
-
-	output := v % max
-
-	if output < 0 {
-		output = max + output
+func checkBackward(idx int, u []int) bool {
+	fmt.Println("Checking bwd....: ", idx)
+	if idx < 1 {
+		return true
 	}
-	return output
+	fmt.Println("Checking bwd......: ", idx)
+
+	for i := idx - 1; i >= 0; i-- {
+		if slices.IndexFunc(ordering, func(update []int) bool {
+			if update[0] == u[i] && update[1] == u[idx] {
+				return true
+			} else {
+				return false
+			}
+		}) == -1 {
+			return false
+		}
+	}
+	return true
 }
 
-func normalizeY(v int) int {
-	max := len(input)
-
-	output := v % max
-
-	if output < 0 {
-		output = max + output
+func checkForward(idx int, u []int) bool {
+	if idx+1 > len(u) {
+		return true
 	}
-	return output
+
+	for i := idx + 1; i < len(u); i++ {
+		fmt.Println("Checking fwd: ", u[idx], u[i])
+		if slices.IndexFunc(ordering, func(update []int) bool {
+			if update[0] == u[idx] && update[1] == u[i] {
+				return true
+			} else {
+				return false
+			}
+		}) == -1 {
+			return false
+		}
+	}
+	return true
 }
 
-func normalizeXY(x int, y int) (int, int) {
-	x = normalizeX(x)
-	y = normalizeX(y)
+func checkUpdate(u []int) int {
+	for i, _ := range u {
+		if !(checkForward(i, u) && checkBackward(i, u)) {
+			return 0
+		}
+	}
+	return getMiddlePage(u)
+}
 
-	return x, y
+func Atoi(n string) int {
+	if i, err := strconv.Atoi(n); err != nil {
+		return 0
+	} else {
+		return i
+	}
+}
+
+func addOrderingRule(t string) {
+	var o []int
+
+	split := strings.Split(t, "|")
+
+	for _, v := range split {
+		o = append(o, Atoi(v))
+	}
+
+	ordering = append(ordering, o)
+}
+
+func addUpdate(t string) {
+	var u []int
+
+	split := strings.Split(t, ",")
+
+	for _, v := range split {
+		u = append(u, Atoi(v))
+	}
+
+	updates = append(updates, u)
 }
 
 func readInput(file string) {
@@ -69,97 +111,37 @@ func readInput(file string) {
 	s.Split(bufio.ScanLines)
 
 	for s.Scan() {
-		fmt.Println(s.Text())
+		line := s.Text()
 
-		input = append(input, s.Text())
+		if strings.Contains(line, "|") {
+			// Ordering rules
+			addOrderingRule(line)
+		} else if strings.Contains(line, ",") {
+			// Updates
+			addUpdate(line)
+		}
 		// fmt.Println(input)
 	}
 }
 
-func findXMAS(x int, y int, moveX int, moveY int) bool {
-
-	for i := range pattern {
-		if getChar(x+moveX*i, y+moveY*i) != string(pattern[i]) {
-			return false
-		}
-	}
-
-	for i := range pattern {
-		found[normalizeY(x+moveX*i)][normalizeY(y+moveY*i)] = getChar(x+moveX*i, y+moveY*i)
-	}
-
-	return true
-}
-
-func initFound() {
-	for y := 0; y < len(input); y++ {
-		var line []string
-		for x := 0; x < len(input[0]); x++ {
-			line = append(line, ".")
-		}
-
-		found = append(found, []string(line))
-	}
-}
-
-func printSummary(m int, n int) {
-
-	// red := color.New(color.FgRed, color.Bold)
-
-	fmt.Println("---------- SUMMARY ----------")
-
-	for y := 0; y < len(found); y++ {
-		for x := 0; x < len(found[0]); x++ {
-			if x == m && y == n {
-				color.Set(color.FgRed, color.Bold)
-				fmt.Printf("%s", string(found[x][y]))
-				color.Unset()
-			} else {
-				fmt.Printf("%s", string(found[x][y]))
-			}
-		}
-		fmt.Println()
-	}
-}
-
 func run(file string) int {
-	// x, y, moveX, moveY
-	// dir1 := [][]int{
-	// 	{0, 0, 1, 1},
-	// 	{1, 1, -1, -1},
-	// }
-	// dir2 := [][]int{
-	// 	{0, 1, 1, -1},
-	// 	{1, 0, -1, 1},
-	// }
-
 	readInput(file)
-	initFound()
 
 	total := 0
 
-	// for y := range input {
-	// 	for x := range input[y] {
-	// 		fmt.Printf("%s ", getChar(x, y))
-	// 	}
-	// 	fmt.Println()
-	// }
+	fmt.Println(ordering)
+	fmt.Println(updates)
 
-	for y := 0; y < len(input); y++ {
-		for x := 0; x < len(input[0]); x++ {
-			if (findXMAS(x+0, y+0, 1, 1) || findXMAS(x+2, y+2, -1, -1)) && (findXMAS(x+0, y+2, 1, -1) || findXMAS(x+2, y+0, -1, 1)) {
-				total += 1
-			}
-			// printSummary(x, y)
-		}
-		fmt.Println()
+	for _, v := range updates {
+		value := checkUpdate(v)
+		fmt.Println(v, value)
+		total += value
 	}
 
 	return total
 }
 
 func main() {
-
 	total := run("input.txt")
 
 	fmt.Println("Total: ", total)
