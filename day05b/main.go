@@ -145,11 +145,11 @@ func fixUpdate(u []int) []int {
 			}
 		})
 
-		if cmp1 > 0 {
+		if cmp1 >= 0 {
 			return -1
 		}
 
-		if cmp2 > 0 {
+		if cmp2 >= 0 {
 			return 1
 		}
 		return 0
@@ -169,13 +169,16 @@ func run(file string) int {
 	for _, v := range updates {
 		value := checkUpdate(v)
 		if value == 0 {
-			fmt.Println("Bad: ", v, value)
+			fmt.Println("Bad:               ", v, value)
 			v = fixUpdate(v)
-			value := checkUpdate(v)
-			fmt.Println("Bad (but fixed): ", v, value)
+			value = checkUpdate(v)
+			fmt.Println("Bad (but fixed):   ", v, value)
+			if value == 0 {
+				fmt.Println("WARN - wrong fix above!")
+			}
 			total += value
 		} else {
-			fmt.Println("Good: ", v, value)
+			// fmt.Println("Good: ", v, value)
 		}
 
 	}
