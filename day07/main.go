@@ -5,129 +5,68 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 )
 
-var areaMap [][]int
-var visited [][]bool
-
-var visitedCount = 1
-
-type direction struct {
-	x int
-	y int
-	s rune
+type equation struct {
+	value   int
+	numbers []int
 }
 
-type position struct {
-	x int
-	y int
-	d direction
-}
+var equations []equation
 
-var guard position
-
-func visitMap(x, y int) {
-	if !visited[y][x] {
-		visitedCount++
+func Atoi(n string) int {
+	if i, err := strconv.Atoi(n); err != nil {
+		return 0
+	} else {
+		return i
 	}
-	visited[y][x] = true
 }
 
-func getFromMap(x, y int) int {
-	return areaMap[y][x]
+func (e equation) String() string {
+	return fmt.Sprintf("%d: %v\n", e.value, e.numbers)
 }
 
-func drawMap() {
-	fmt.Print("\033[H\033[2J")
-	fmt.Printf("======== Visited %d ====================================\n", visitedCount)
-	for y := range areaMap {
+func getOp(i int, o int) string {
+	if (o>>(i))&1 == 0 {
+		return "+"
+	} else {
+		return "*"
+	}
+}
 
-		// Map
-		for x, _ := range areaMap[y] {
-			char := ""
+func printequation(e equation, o int) int {
+	total := e.numbers[0]
+	for i, v := range e.numbers {
+		fmt.Print(v)
 
-			if x == guard.x && y == guard.y {
-				char = string(guard.d.s)
-			} else {
-				v := getFromMap(x, y)
-				if v == 0 {
-					char = "."
-				} else {
-					char = "#"
-				}
+		if i > 0 {
+			if getOp(i-1, o) == "+" {
+				total += v
 			}
-			fmt.Print(char)
-		}
-		fmt.Print(" || ")
-		// Visited
-		for _, v := range visited[y] {
-			char := ""
-			if v {
-				char = "X"
-			} else {
-				char = "."
+			if getOp(i-1, o) == "*" {
+				total = total * v
 			}
-			fmt.Print(char)
 		}
 
-		fmt.Println()
+		if i < len(e.numbers)-1 {
+			fmt.Printf(getOp(i, o))
+
+		}
 	}
+
+	fmt.Printf(" = %d    [%v]", total, e.value == total)
+
+	fmt.Println()
+	return total
 }
 
-func turnGuardRight(g position) position {
-	if g.d.s == '^' {
-		g.d = direction{1, 0, '>'}
-	} else if g.d.s == '>' {
-		g.d = direction{0, 1, 'V'}
-	} else if g.d.s == 'V' {
-		g.d = direction{-1, 0, '<'}
-	} else if g.d.s == '<' {
-		g.d = direction{0, -1, '^'}
+func calculate(e equation) bool {
+	for i := 0; i < (1 << ((len(e.numbers)) - 1)); i++ {
+		printequation(e, i)
 	}
-	return g
-}
-
-func guardCharToDirection(g rune) direction {
-	if g == '^' {
-		return direction{0, -1, '^'}
-	} else if g == '>' {
-		return direction{1, 0, '>'}
-	} else if g == 'v' || g == 'V' {
-		return direction{0, 1, 'V'}
-	} else if g == '<' {
-		return direction{-1, 0, '<'}
-	}
-
-	return direction{0, 0, '!'}
-}
-
-func moveForward() {
-	for {
-		drawMap()
-		newPos := guard
-		newPos.x = guard.x + guard.d.x
-		newPos.y = guard.y + guard.d.y
-
-		if newPos.x < 0 || newPos.y < 0 || newPos.x >= len(areaMap[0]) || newPos.y >= len(areaMap) {
-			fmt.Println("Leaving the map!")
-			break
-		}
-
-		// Check if on an obstacle
-		if getFromMap(newPos.x, newPos.y) == 0 {
-			guard = newPos
-			visitMap(newPos.x, newPos.y)
-			continue
-		}
-
-		if getFromMap(newPos.x, newPos.y) != 0 {
-			fmt.Println("On the obstacle!")
-			guard = turnGuardRight(guard)
-			continue
-		}
-
-	}
-
+	return false
 }
 
 func readInput(file string) {
@@ -141,29 +80,20 @@ func readInput(file string) {
 
 	s.Split(bufio.ScanLines)
 
-	var y = 0
 	for s.Scan() {
 		line := s.Text()
 
-		var row []int
-		var v_row []bool
-		for x, v := range line {
-			if v == '.' {
-				row = append(row, 0)
-				v_row = append(v_row, false)
-			} else if v == '#' {
-				row = append(row, 1)
-				v_row = append(v_row, false)
-			} else {
-				guard = position{x, y, guardCharToDirection(v)}
-				row = append(row, 0)
-				v_row = append(v_row, true)
-			}
+		e := equation{}
+
+		parts := strings.Split(line, ":")
+		e.value = Atoi(parts[0])
+
+		numbers := strings.Split(parts[1][1:], " ")
+
+		for _, v := range numbers {
+			e.numbers = append(e.numbers, Atoi(v))
 		}
-		fmt.Println(row)
-		y++
-		areaMap = append(areaMap, row)
-		visited = append(visited, v_row)
+		equations = append(equations, e)
 	}
 }
 
@@ -172,9 +102,11 @@ func run(file string) int {
 
 	total := 0
 
-	moveForward()
+	fmt.Println(equations)
 
-	total = visitedCount
+	for _, v := range equations {
+		calculate(v)
+	}
 
 	return total
 }
