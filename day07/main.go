@@ -29,6 +29,7 @@ func (e equation) String() string {
 }
 
 func getOp(i int, o int) string {
+	// fmt.Printf("[getOpt %b]", (o>>(i))&1)
 	if (o>>(i))&1 == 0 {
 		return "+"
 	} else {
@@ -41,19 +42,30 @@ func printequation(e equation, o int) int {
 	for i, v := range e.numbers {
 		fmt.Print(v)
 
-		if i > 0 {
-			if getOp(i-1, o) == "+" {
-				total += v
-			}
-			if getOp(i-1, o) == "*" {
-				total = total * v
-			}
-		}
+		// if i > 0 {
+		// 	if getOp(i, o) == "+" {
+		// 		total += v
+		// 	}
+		// 	if getOp(i, o) == "*" {
+		// 		total = total * v
+		// 	}
+		// }
 
 		if i < len(e.numbers)-1 {
 			fmt.Printf(getOp(i, o))
-
 		}
+	}
+
+	for i := 1; i < len(e.numbers); i++ {
+		if getOp(i-1, o) == "+" {
+			total += e.numbers[i]
+			// fmt.Printf("[+%d = total %d]", e.numbers[i], total)
+		}
+		if getOp(i-1, o) == "*" {
+			total = total * e.numbers[i]
+			// fmt.Printf("[*%d = total %d]", e.numbers[i], total)
+		}
+
 	}
 
 	fmt.Printf(" = %d    [%v]", total, e.value == total)
@@ -64,7 +76,10 @@ func printequation(e equation, o int) int {
 
 func calculate(e equation) bool {
 	for i := 0; i < (1 << ((len(e.numbers)) - 1)); i++ {
-		printequation(e, i)
+		result := printequation(e, i)
+		if e.value == result {
+			return true
+		}
 	}
 	return false
 }
@@ -105,7 +120,9 @@ func run(file string) int {
 	fmt.Println(equations)
 
 	for _, v := range equations {
-		calculate(v)
+		if calculate(v) {
+			total += v.value
+		}
 	}
 
 	return total
