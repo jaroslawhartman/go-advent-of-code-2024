@@ -127,27 +127,38 @@ func setAntinode(p1, p2 position) {
 	vx := p2.x - p1.x
 	vy := p2.y - p1.y
 
-	ax := p2.x + vx
-	ay := p2.y + vy
+	ax := p2.x
+	ay := p2.y
 
-	fmt.Printf("p1: %v, p2: %v, v: %d,%d, a: %d,%d\n", p1, p2, vx, vy, ax, ay)
+	for {
+		ax = ax + vx
+		ay = ay + vy
 
-	if ax >= 0 && ay >= 0 && ax < len(antinodes[0]) && ay < len(antinodes) {
-		if !antinodes[ay][ax] {
-			antinodes[ay][ax] = true
-			totalAntinodes++
+		fmt.Printf("p1: %v, p2: %v, v: %d,%d, a: %d,%d\n", p1, p2, vx, vy, ax, ay)
+
+		if ax >= 0 && ay >= 0 && ax < len(antinodes[0]) && ay < len(antinodes) {
+			if !antinodes[ay][ax] {
+				antinodes[ay][ax] = true
+				totalAntinodes++
+			}
+
+		} else {
+			break
+		}
+
+		if p1 == p2 {
+			break
 		}
 	}
-
 }
 
 func checkAntenna(a antenna) {
 	fmt.Println("Checking freq", string(a.freq))
 	for _, p1 := range a.positions {
 		for _, p2 := range a.positions {
-			if p1 == p2 {
-				continue
-			}
+			// if p1 == p2 {
+			// 	continue
+			// }
 			setAntinode(p1, p2)
 			setAntinode(p2, p1)
 		}
