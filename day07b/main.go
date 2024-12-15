@@ -59,13 +59,13 @@ func GeneratePermutations(N int) []string {
 
 func printequation(e equation, o string) int {
 	total := e.numbers[0]
-	for i, v := range e.numbers {
-		fmt.Print(v)
+	// for i, v := range e.numbers {
+	// 	fmt.Print(v)
 
-		if i < len(e.numbers)-1 {
-			fmt.Printf(getOp(i, o))
-		}
-	}
+	// 	if i < len(e.numbers)-1 {
+	// 		fmt.Printf(getOp(i, o))
+	// 	}
+	// }
 
 	for i := 1; i < len(e.numbers); i++ {
 		if getOp(i-1, o) == "+" {
@@ -77,11 +77,17 @@ func printequation(e equation, o string) int {
 			// fmt.Printf("[*%d = total %d]", e.numbers[i], total)
 		}
 
+		if getOp(i-1, o) == "|" {
+			result := fmt.Sprintf("%d%d", total, e.numbers[i])
+			total = Atoi(result)
+			// fmt.Printf("[|%c = total %d]", e.numbers[i], total)
+		}
+
 	}
 
-	fmt.Printf(" = %d    [%v]", total, e.value == total)
+	// fmt.Printf(" = %d    [%v]", total, e.value == total)
 
-	fmt.Println()
+	// fmt.Println()
 	return total
 }
 
@@ -89,10 +95,10 @@ func calculate(e equation) bool {
 
 	operations := GeneratePermutations(len(e.numbers) - 1)
 
-	for i, v := range operations {
+	for _, v := range operations {
 		result := printequation(e, v)
 
-		fmt.Println(i, v)
+		// fmt.Println(i, v)
 
 		if e.value == result {
 			return true
