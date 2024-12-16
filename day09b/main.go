@@ -81,7 +81,7 @@ func deepCopyBoolSlice(src [][]bool) [][]bool {
 	return cpy
 }
 
-func findFree(max int) int {
+func findFree(max int, size int) int {
 	for i := range files {
 		// check if we're at max, i.e. position from where we want to relocate
 		// It means no more free and most likely we're done
@@ -90,6 +90,16 @@ func findFree(max int) int {
 		}
 
 		if files[i] == -1 {
+			if i+size < max {
+				for _, f := range files[i : i+size] {
+					if f != -1 {
+						break
+					}
+				}
+			} else {
+				return -1
+			}
+
 			return i
 		}
 	}
@@ -98,7 +108,7 @@ func findFree(max int) int {
 
 func optimize() {
 	for i := len(files) - 1; i > -1; i-- {
-		free := findFree(i)
+		free := findFree(i, 4)
 		fmt.Printf("Pos: %d, Id: %d, Free: %d\n", i, files[i], free)
 
 		if free == -1 {
