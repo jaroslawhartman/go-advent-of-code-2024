@@ -8,7 +8,11 @@ import (
 	"strconv"
 )
 
+// files: -1: free, other - a file with ID = <number>
 var files []int
+
+// sizes map: map[fileId]=size
+var sizeMap = make(map[int]int)
 
 func Atoi(n string) int {
 	if i, err := strconv.Atoi(n); err != nil {
@@ -51,6 +55,9 @@ func readInput(file string) {
 			for range Atoi(fileSize) {
 				files = append(files, index)
 			}
+
+			sizeMap[index] = Atoi(fileSize)
+
 			index++
 
 			if i+1 < len(line) {
@@ -93,31 +100,38 @@ func findFree(max int, size int) int {
 			if i+size < max {
 				for _, f := range files[i : i+size] {
 					if f != -1 {
-						break
+						goto loop
 					}
 				}
+				return i
 			} else {
 				return -1
 			}
-
-			return i
 		}
+	loop:
 	}
 	return -1
 }
 
 func optimize() {
 	for i := len(files) - 1; i > -1; i-- {
-		free := findFree(i, 4)
-		fmt.Printf("Pos: %d, Id: %d, Free: %d\n", i, files[i], free)
+		if files[i] == -1 {
+			continue
+		}
+		size := sizeMap[files[i]]
+		free := findFree(i, size)
+		fmt.Printf("Pos: %d, Id: %d, Size: %d, Free: %d\n", i, files[i], size, free)
 
-		if free == -1 {
-			break
-		} else {
-			// Relocate ...
-			files[free] = files[i]
-			// .. then free
-			files[i] = -1
+		if free != -1 {
+			for r := 0; r < size; r++ {
+				fmt.Printf("...Relocating: [%d] %d -> %d\n", files[i+r-size+1], i+r-size+1, free+r)
+				// Relocate ...
+				files[free+r] = files[i+r-size+1]
+				// .. then free
+				files[i+r-size+1] = -1
+			}
+			i -= size
+			// displayMap()
 		}
 	}
 }
