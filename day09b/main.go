@@ -23,11 +23,11 @@ func Atoi(n string) int {
 }
 
 func displayMap() {
-	for _, v := range files {
+	for i, v := range files {
 		if v == -1 {
 			fmt.Print(".")
 		} else {
-			fmt.Print(v)
+			fmt.Printf("[%d|%d]", i, v)
 		}
 	}
 	fmt.Println()
@@ -116,6 +116,7 @@ func findFree(max int, size int) int {
 func optimize() {
 	for i := len(files) - 1; i > -1; i-- {
 		if files[i] == -1 {
+			fmt.Printf(">Pos: %d, Id: %d (free)\n", i, files[i])
 			continue
 		}
 		size := sizeMap[files[i]]
@@ -125,13 +126,30 @@ func optimize() {
 		if free != -1 {
 			for r := 0; r < size; r++ {
 				fmt.Printf("...Relocating: [%d] %d -> %d\n", files[i+r-size+1], i+r-size+1, free+r)
+
+				// Troubleshooting...
+				if files[i+r-size+1] == -1 {
+					fmt.Printf("...ERROR\n")
+
+					fmt.Println("Size:", size)
+					displayMap()
+					os.Exit(128)
+				}
 				// Relocate ...
 				files[free+r] = files[i+r-size+1]
 				// .. then free
 				files[i+r-size+1] = -1
 			}
+			fmt.Printf("....Moving [%d] - -%d -> [%d]\n", i, size, i-size)
 			i -= size
+			// nope, this is BAD code :-(
+			// Wokring arund some logical error in the algorithm
+			if files[i] != -1 {
+				i += 1
+			}
 			// displayMap()
+		} else {
+			fmt.Printf(">Pos: %d, Id: %d --- found free -1\n", i, files[i])
 		}
 	}
 }
