@@ -11,7 +11,9 @@ import (
 
 var stones []int
 
-var blink int
+var total int
+
+var maxDepth int
 
 func Atoi(n string) int {
 	if i, err := strconv.Atoi(n); err != nil {
@@ -22,7 +24,7 @@ func Atoi(n string) int {
 }
 
 func displayMap() {
-	fmt.Printf("[%d] (len: %d) %v\n", blink, len(stones), stones)
+	fmt.Printf("(len: %d) %v\n", len(stones), stones)
 }
 
 func readInput(file string) {
@@ -47,36 +49,32 @@ func readInput(file string) {
 	}
 }
 
-func doBlink() {
-	newStones := []int{}
-
-	for _, v := range stones {
-		strV := fmt.Sprintf("%d", v)
-		if v == 0 {
-			newStones = append(newStones, 1)
-		} else if len(strV)%2 == 0 {
-
-			newStones = append(newStones, Atoi(strV[:len(strV)/2]))
-			newStones = append(newStones, Atoi(strV[len(strV)/2:]))
-		} else {
-			newStones = append(newStones, v*2024)
-		}
+func doBlink(stone, depth, maxDepth int) {
+	if depth == maxDepth {
+		return
 	}
 
-	stones = newStones
+	strStone := fmt.Sprintf("%d", stone)
+
+	if stone == 0 {
+		doBlink(1, depth+1, maxDepth)
+	} else if len(strStone)%2 == 0 {
+		total += 1
+		doBlink(Atoi(strStone[:len(strStone)/2]), depth+1, maxDepth)
+		doBlink(Atoi(strStone[len(strStone)/2:]), depth+1, maxDepth)
+	} else {
+		doBlink(stone*2024, depth+1, maxDepth)
+	}
 }
 
 func run(file string) int {
 	readInput(file)
 	displayMap()
 
-	for b := range 25 {
-		blink = b + 1
-		doBlink()
-		displayMap()
+	for _, stone := range stones {
+		total += 1
+		doBlink(stone, 0, 25)
 	}
-
-	total := len(stones)
 
 	return total
 }
