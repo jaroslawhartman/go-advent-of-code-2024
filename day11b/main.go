@@ -4,27 +4,28 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 var stones []int
 
-type totalMux struct {
-	mu    sync.Mutex
-	total int
+type atom struct {
+	value atomic.Int64
 }
 
-var total totalMux = totalMux{total: 0}
+var total atom = atom{}
 
-func incTotal(v int) {
-	total.mu.Lock()
-	defer total.mu.Unlock()
+// func incTotal(v int) {
+// 	total.mu.Lock()
+// 	defer total.mu.Unlock()
 
-	total.total += v
-}
+// 	total.total += v
+// }
 
 func Atoi(n string) int {
 	if i, err := strconv.Atoi(n); err != nil {
@@ -61,25 +62,46 @@ func readInput(file string) {
 }
 
 func doBlink(stone, depth, maxDepth int) {
+
+	var wg sync.WaitGroup
+
 	if depth == maxDepth {
 		return
 	}
 
-	if total.total%10000000 == 0 {
-		fmt.Printf("Depth: %d,  Total: %d\n", depth, total.total)
-	}
+	current := total.value.Load()
 
-	strStone := fmt.Sprintf("%d", stone)
+	if current%10000000 == 0 {
+		fmt.Printf("Depth: %d,  Total: %d\n", depth, current)
+	}
 
 	if stone == 0 {
-		doBlink(1, depth+1, maxDepth)
-	} else if len(strStone)%2 == 0 {
-		incTotal(1)
-		doBlink(Atoi(strStone[:len(strStone)/2]), depth+1, maxDepth)
-		doBlink(Atoi(strStone[len(strStone)/2:]), depth+1, maxDepth)
+		wg.Add(1)
+		go func() {
+			doBlink(1, depth+1, maxDepth)
+			defer wg.Done()
+		}()
+	} else if numDigits := int(math.Log10(float64(stone))) + 1; numDigits%2 == 0 {
+		total.value.Add(1)
+
+		wg.Add(1)
+		go func() {
+			// Calculate the divisor to separate the halves
+			divisor := int(math.Pow10(numDigits / 2))
+
+			doBlink(stone/divisor, depth+1, maxDepth)
+			doBlink(stone%divisor, depth+1, maxDepth)
+			defer wg.Done()
+		}()
 	} else {
-		doBlink(stone*2024, depth+1, maxDepth)
+		wg.Add(1)
+		go func() {
+			doBlink(stone*2024, depth+1, maxDepth)
+			defer wg.Done()
+		}()
 	}
+
+	wg.Wait()
 }
 
 func run(file string) int {
@@ -89,17 +111,17 @@ func run(file string) int {
 	var wg sync.WaitGroup
 
 	for _, stone := range stones {
-		incTotal(1)
+		total.value.Add(1)
 		wg.Add(1)
 		go func() {
-			doBlink(stone, 0, 75)
+			doBlink(stone, 0, 25)
 			defer wg.Done()
 		}()
 	}
 
 	wg.Wait()
 
-	return total.total
+	return int(total.value.Load())
 }
 
 func main() {
