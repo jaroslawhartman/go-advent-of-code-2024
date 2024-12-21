@@ -7,13 +7,24 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 var stones []int
 
-var total int
+type totalMux struct {
+	mu    sync.Mutex
+	total int
+}
 
-var maxDepth int
+var total totalMux = totalMux{total: 0}
+
+func incTotal(v int) {
+	total.mu.Lock()
+	defer total.mu.Unlock()
+
+	total.total += v
+}
 
 func Atoi(n string) int {
 	if i, err := strconv.Atoi(n); err != nil {
@@ -54,12 +65,16 @@ func doBlink(stone, depth, maxDepth int) {
 		return
 	}
 
+	if total.total%10000000 == 0 {
+		fmt.Printf("Depth: %d,  Total: %d\n", depth, total.total)
+	}
+
 	strStone := fmt.Sprintf("%d", stone)
 
 	if stone == 0 {
 		doBlink(1, depth+1, maxDepth)
 	} else if len(strStone)%2 == 0 {
-		total += 1
+		incTotal(1)
 		doBlink(Atoi(strStone[:len(strStone)/2]), depth+1, maxDepth)
 		doBlink(Atoi(strStone[len(strStone)/2:]), depth+1, maxDepth)
 	} else {
@@ -71,12 +86,20 @@ func run(file string) int {
 	readInput(file)
 	displayMap()
 
+	var wg sync.WaitGroup
+
 	for _, stone := range stones {
-		total += 1
-		doBlink(stone, 0, 25)
+		incTotal(1)
+		wg.Add(1)
+		go func() {
+			doBlink(stone, 0, 75)
+			defer wg.Done()
+		}()
 	}
 
-	return total
+	wg.Wait()
+
+	return total.total
 }
 
 func main() {
