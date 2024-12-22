@@ -8,24 +8,16 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
-	"sync/atomic"
 )
 
-var stones []int
-
-type atom struct {
-	value atomic.Int64
+type entry struct {
+	stone int
+	depth int
 }
 
-var total atom = atom{}
+var cache map[entry]int
 
-// func incTotal(v int) {
-// 	total.mu.Lock()
-// 	defer total.mu.Unlock()
-
-// 	total.total += v
-// }
+var stones []int
 
 func Atoi(n string) int {
 	if i, err := strconv.Atoi(n); err != nil {
@@ -61,67 +53,53 @@ func readInput(file string) {
 	}
 }
 
-func doBlink(stone, depth, maxDepth int) {
+func doBlink(stone, depth, maxDepth, count int) int {
+	localCount := 0
 
-	var wg sync.WaitGroup
-
-	if depth == maxDepth {
-		return
+	e := entry{
+		stone: stone, depth: depth,
 	}
 
-	current := total.value.Load()
+	v, ok := cache[e]
 
-	if current%10000000 == 0 {
-		fmt.Printf("Depth: %d,  Total: %d\n", depth, current)
+	if ok {
+		// fmt.Printf("Found in cache: %d = %v\n", v, e)
+		return v
+	}
+
+	if depth == maxDepth {
+		return 1
 	}
 
 	if stone == 0 {
-		wg.Add(1)
-		go func() {
-			doBlink(1, depth+1, maxDepth)
-			defer wg.Done()
-		}()
+		localCount += doBlink(1, depth+1, maxDepth, count)
 	} else if numDigits := int(math.Log10(float64(stone))) + 1; numDigits%2 == 0 {
-		total.value.Add(1)
 
-		wg.Add(1)
-		go func() {
-			// Calculate the divisor to separate the halves
-			divisor := int(math.Pow10(numDigits / 2))
+		divisor := int(math.Pow10(numDigits / 2))
 
-			doBlink(stone/divisor, depth+1, maxDepth)
-			doBlink(stone%divisor, depth+1, maxDepth)
-			defer wg.Done()
-		}()
+		localCount += doBlink(stone/divisor, depth+1, maxDepth, count)
+		localCount += doBlink(stone%divisor, depth+1, maxDepth, count)
 	} else {
-		wg.Add(1)
-		go func() {
-			doBlink(stone*2024, depth+1, maxDepth)
-			defer wg.Done()
-		}()
+		localCount += doBlink(stone*2024, depth+1, maxDepth, count)
 	}
 
-	wg.Wait()
+	cache[e] = localCount
+
+	return localCount
 }
 
 func run(file string) int {
+	var total int
 	readInput(file)
 	displayMap()
 
-	var wg sync.WaitGroup
+	cache = make(map[entry]int)
 
 	for _, stone := range stones {
-		total.value.Add(1)
-		wg.Add(1)
-		go func() {
-			doBlink(stone, 0, 25)
-			defer wg.Done()
-		}()
+		total += doBlink(stone, 0, 75, 1)
 	}
 
-	wg.Wait()
-
-	return int(total.value.Load())
+	return total
 }
 
 func main() {
