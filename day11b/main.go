@@ -57,7 +57,8 @@ func doBlink(stone, depth, maxDepth, count int) int {
 	localCount := 0
 
 	e := entry{
-		stone: stone, depth: depth,
+		stone: stone,
+		depth: depth,
 	}
 
 	v, ok := cache[e]
