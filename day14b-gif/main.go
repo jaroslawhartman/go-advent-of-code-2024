@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"sync"
 
 	"github.com/fogleman/gg"
 )
@@ -75,27 +76,36 @@ func findRobot(x, y int) int {
 }
 
 func moveRobots() {
+	var wg sync.WaitGroup
+
 	for i := range robots {
-		robots[i].px = (robots[i].px + robots[i].vx)
-		robots[i].py = (robots[i].py + robots[i].vy)
+		wg.Add(1)
 
-		if robots[i].px >= maxX {
-			robots[i].px = robots[i].px % (maxX)
-		}
+		go func() {
+			defer wg.Done()
 
-		if robots[i].py >= maxY {
-			robots[i].py = robots[i].py % (maxY)
-		}
+			robots[i].px = (robots[i].px + robots[i].vx)
+			robots[i].py = (robots[i].py + robots[i].vy)
 
-		if robots[i].px < 0 {
-			robots[i].px = robots[i].px + maxX
-		}
+			if robots[i].px >= maxX {
+				robots[i].px = robots[i].px % (maxX)
+			}
 
-		if robots[i].py < 0 {
-			robots[i].py = robots[i].py + maxY
-		}
+			if robots[i].py >= maxY {
+				robots[i].py = robots[i].py % (maxY)
+			}
 
+			if robots[i].px < 0 {
+				robots[i].px = robots[i].px + maxX
+			}
+
+			if robots[i].py < 0 {
+				robots[i].py = robots[i].py + maxY
+			}
+		}()
 	}
+
+	wg.Wait()
 }
 
 func countRobots(qx, qy int) int {
@@ -164,19 +174,21 @@ func drawFrame(i int) {
 func testFrame() bool {
 	for y := range maxY {
 		lineCount := 0
-		for x := range maxX {
-			count := findRobotCount(x, y)
 
-			if count > 0 {
+		for x := range maxX {
+			count := findRobot(x, y)
+
+			if count != -1 {
 				lineCount += 1
+
+				if lineCount > 9 {
+					return true
+				}
 			} else {
 				lineCount = 0
 			}
 		}
 
-		if lineCount > 10 {
-			return true
-		}
 	}
 	return false
 }
@@ -228,15 +240,14 @@ func run(file string, x, y int) int {
 	maxY = y
 	readInput(file)
 
-	for i := range 100000000 {
+	for i := range 100000 {
+		moveRobots()
 		// drawMap(i + 1)
 		if testFrame() {
 			drawFrame(i + 1)
-			fmt.Println("Found !!", i)
-			total := countRobots(0, 0) * countRobots(1, 0) * countRobots(0, 1) * countRobots(1, 1)
-			return total
+			fmt.Println("Found !!", i+1)
+			break
 		}
-		moveRobots()
 
 		if i%10000 == 0 {
 			fmt.Println(i)

@@ -24,6 +24,10 @@ As my xmas break finishes on the 29th December, this is my hard stop to solve as
 
 ![](img/aoc.png)
 
+# Day14 spoiler
+
+![](day14b-gif/rgb.gif)
+
 # Statistics
 
 Very cool statistics board: https://aoc.xhyrom.dev/
